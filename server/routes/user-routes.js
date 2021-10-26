@@ -10,6 +10,7 @@ AWS.config.update(awsConfig);
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const table = "Thoughts";
 
+// get all users
 router.get("/users", (req, res) => {
   const params = {
     TableName: table,
@@ -19,6 +20,36 @@ router.get("/users", (req, res) => {
     if (err) {
       res.status(500).json(err);
     } else {
+      res.json(data.Items);
+    }
+  });
+});
+
+// get users by username
+router.get("/users/:username", (req, res) => {
+  console.log(`Querying for thought(s) from ${req.params.username}.`);
+
+  const params = {
+    TableName: table,
+    KeyConditionExpression: "#un = :user",
+    ExpressionAttributeNames: {
+      "#un": "username",
+      "#ca": "createdAt",
+      "#th": "thought",
+    },
+    ExpressionAttributeValues: {
+      ":user": req.params.username,
+    },
+    ProjectionExpression: "#th, #ca",
+    ScanIndexForward: false,
+  };
+
+  dynamodb.query(params, (err, data) => {
+    if (err) {
+      console.error("Unable to query. Error:", JSON.stringify(err, null, 2));
+      res.status(500).json(err); // an error occurred
+    } else {
+      console.log("Query succeeded.");
       res.json(data.Items);
     }
   });
